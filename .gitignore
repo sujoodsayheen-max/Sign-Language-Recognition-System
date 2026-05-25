@@ -1,0 +1,21 @@
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Dataset
+ASL_Alphabet_Dataset/
+*.csv
+*.zip
+*.rar
+
+# Models
+*.pth
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
