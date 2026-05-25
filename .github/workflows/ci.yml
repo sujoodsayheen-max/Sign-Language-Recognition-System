@@ -1,18 +1,15 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ main ]
 
-  pull_request:
-    branches: [ main ]
-
 jobs:
-  test:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Set up Python
@@ -20,16 +17,16 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: Install Dependencies
+    - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Verify Project Files
-      run: |
-        test -f train_landmark_model.py
-        test -f realtime_asl_predictor.py
-        test -f requirements.txt
+    - name: Login to Docker Hub
+      run: echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    - name: CI Success
-      run: echo "Pipeline completed successfully"
+    - name: Build Docker image
+      run: docker build -t sujood/sign-language-recognition-system:latest .
+
+    - name: Push Docker image
+      run: docker push sujood/sign-language-recognition-system:latest
