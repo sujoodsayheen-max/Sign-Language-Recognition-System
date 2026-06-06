@@ -1,121 +1,51 @@
-# ✋ Sign Language Recognition System
+# Sign Language Recognition System
 
-## 📌 Overview
+## Overview
 
-The **Sign Language Recognition System** is an AI-powered real-time communication assistance project designed to help deaf and mute individuals communicate more effectively in public and private environments.
+This project is a real-time Sign Language Recognition System that recognizes American Sign Language (ASL) alphabet gestures using computer vision and deep learning techniques.
 
-The system recognizes American Sign Language (ASL) hand gestures using computer vision and deep learning technologies. A webcam captures the user's hand movements, extracts hand landmarks using MediaPipe, and classifies the gesture into alphabet letters using a PyTorch neural network model.
+The system uses MediaPipe to detect and extract hand landmarks from webcam input and a PyTorch neural network to classify the detected gesture into an ASL letter.
 
-This project aims to reduce communication barriers in places such as:
-
-* Banks
-* Companies
-* Customer service centers
-* Government institutions
-* Public and private organizations
-
-The current implementation focuses on **Alphabet-Level Recognition (Phase 1)**, while future development will expand the system toward **Word-Level and Sentence-Level Translation**.
+The current version focuses on alphabet recognition and serves as the first phase of a larger system that can be extended to support word and sentence translation in the future.
 
 ---
 
-# 🎯 Project Objectives
+## Features
 
-The main objectives of this project are:
-
-* Build a real-time sign language recognition system.
-* Assist deaf and mute individuals in daily communication.
-* Detect and track hand landmarks accurately.
-* Train a deep learning model capable of recognizing ASL alphabet gestures.
-* Provide stable and fast predictions using live webcam input.
-* Create a foundation for future word and sentence recognition systems.
+* Real-time hand gesture recognition
+* Hand landmark detection using MediaPipe
+* ASL alphabet classification using PyTorch
+* Live webcam prediction
+* Prediction smoothing for more stable results
+* Training and evaluation pipeline
 
 ---
 
-# 🧠 How the System Works
+## System Workflow
 
-The system follows a multi-stage pipeline:
-
-## 1️⃣ Hand Detection
-
-The webcam captures live video frames.
-
-MediaPipe is used to:
-
-* Detect the hand
-* Track hand movement
-* Extract 21 hand landmarks
-
-Each landmark contains:
-
-* X coordinate
-* Y coordinate
-* Z coordinate
-
-This creates a total of **63 numerical features** for each gesture.
+1. Capture hand images using a webcam.
+2. Detect hand landmarks using MediaPipe.
+3. Extract 21 hand landmarks (63 features).
+4. Train a neural network on the extracted features.
+5. Perform real-time gesture prediction using the trained model.
 
 ---
 
-## 2️⃣ Feature Extraction
+## Technologies Used
 
-The extracted landmarks are converted into numerical vectors and saved into a CSV dataset.
-
-The dataset becomes the input for training the deep learning model.
-
----
-
-## 3️⃣ Model Training
-
-A neural network was implemented using PyTorch.
-
-The model:
-
-* Learns gesture patterns
-* Classifies ASL alphabet letters
-* Improves prediction accuracy through training
-
-### Model Architecture
-
-* Input Layer: 63 Features
-* Hidden Layer 1: 256 Neurons + ReLU
-* Batch Normalization + Dropout
-* Hidden Layer 2: 128 Neurons + ReLU
-* Hidden Layer 3: 64 Neurons + ReLU
-* Output Layer: Number of ASL Classes
+* Python
+* MediaPipe
+* PyTorch
+* OpenCV
+* NumPy
+* Pandas
+* Scikit-learn
+* Matplotlib
+* Seaborn
 
 ---
 
-## 4️⃣ Real-Time Prediction
-
-The trained model is integrated with OpenCV.
-
-The system:
-
-* Captures webcam frames
-* Extracts hand landmarks in real time
-* Predicts the corresponding ASL letter
-* Displays the predicted output on screen
-
-A smoothing buffer is used to improve prediction stability and reduce flickering.
-
----
-
-# 🏗️ Technologies Used
-
-| Technology   | Purpose                         |
-| ------------ | ------------------------------- |
-| Python       | Main programming language       |
-| MediaPipe    | Hand landmark detection         |
-| PyTorch      | Deep learning model             |
-| OpenCV       | Real-time webcam processing     |
-| NumPy        | Numerical computations          |
-| Pandas       | Data processing                 |
-| Scikit-learn | Data preprocessing & evaluation |
-| Matplotlib   | Visualization                   |
-| Seaborn      | Confusion matrix visualization  |
-
----
-
-# 📂 Project Structure
+## Project Structure
 
 ```text
 .
@@ -130,84 +60,76 @@ A smoothing buffer is used to improve prediction stability and reduce flickering
 
 ---
 
-# 📁 Main Files Description
+## File Description
 
-## 🔹 extract_landmarks.py
+### extract_landmarks.py
 
-Responsible for:
+* Reads dataset images
+* Detects hands using MediaPipe
+* Extracts hand landmarks
+* Saves landmarks to a CSV file
 
-* Reading dataset images
-* Detecting hands using MediaPipe
-* Extracting landmarks
-* Saving numerical features into CSV format
+### train_model.py
 
----
+* Loads and preprocesses data
+* Trains the neural network
+* Evaluates model performance
+* Saves trained models and results
 
-## 🔹 train_model.py
+### realtime.py
 
-Responsible for:
-
-* Loading dataset
-* Data preprocessing
-* Training the neural network
-* Validation and testing
-* Saving trained models
-* Generating evaluation metrics
-
----
-
-## 🔹 realtime.py
-
-Responsible for:
-
-* Loading trained model
-* Capturing webcam stream
-* Predicting gestures in real time
-* Displaying live recognition results
+* Loads the trained model
+* Captures webcam input
+* Predicts ASL gestures in real time
+* Displays prediction results
 
 ---
 
-# 📊 Model Evaluation
+## Model Architecture
 
-The system performance was evaluated using:
+* Input Layer: 63 Features
+* Hidden Layer: 256 Neurons + ReLU
+* Hidden Layer: 128 Neurons + ReLU
+* Hidden Layer: 64 Neurons + ReLU
+* Output Layer: ASL Classes
+
+Batch Normalization and Dropout layers are used to improve training stability and reduce overfitting.
+
+---
+
+## Evaluation
+
+Model performance is evaluated using:
 
 * Accuracy Score
 * Classification Report
 * Confusion Matrix
-* Validation Accuracy Curves
-* Training Loss Curves
-
-The model achieved stable real-time predictions with high validation performance.
+* Training Loss Curve
+* Validation Accuracy Curve
 
 ---
 
-# 🚀 How to Run the Project
+## Running the Project
 
-## 1️⃣ Install Dependencies
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-## 2️⃣ Run Landmark Extraction
+Extract landmarks:
 
 ```bash
 python extract_landmarks.py
 ```
 
----
-
-## 3️⃣ Train the Model
+Train the model:
 
 ```bash
 python train_model.py
 ```
 
----
-
-## 4️⃣ Start Real-Time Recognition
+Run real-time recognition:
 
 ```bash
 python realtime.py
@@ -215,53 +137,19 @@ python realtime.py
 
 ---
 
-# 📸 System Features
+## Future Work
 
-✅ Real-time hand gesture recognition
-
-✅ MediaPipe hand tracking
-
-✅ Deep learning classification using PyTorch
-
-✅ Stable prediction smoothing
-
-✅ User-friendly interface
-
-✅ Lightweight and scalable architecture
+* Word-level recognition
+* Sentence translation
+* Speech output generation
+* Mobile application deployment
+* Web-based interface
+* Arabic Sign Language support
 
 ---
 
-# 🔮 Future Improvements
+## Authors
 
-Future development plans include:
+Graduation Project – Sign Language Recognition System
 
-* Word-Level Recognition
-* Sentence Translation
-* Speech Output Integration
-* Mobile Application Deployment
-* Web-Based Interface
-* Multi-hand Detection
-* Arabic Sign Language Support
-
----
-
-# 🌍 Social Impact
-
-This project aims to improve accessibility and communication for deaf and mute individuals by enabling easier interaction with employees and services without requiring a human interpreter.
-
-The system can potentially be deployed in:
-
-* Banks
-* Hospitals
-* Universities
-* Customer service centers
-* Government institutions
-* Public service environments
-
----
-
-# 👩‍💻 Authors
-
-Graduation Project — Sign Language Recognition System
-
-Developed using Artificial Intelligence, Computer Vision, and Deep Learning technologies.
+Developed using Computer Vision and Deep Learning techniques.
