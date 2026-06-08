@@ -69,7 +69,6 @@ X_val, X_test, y_val, y_test = train_test_split(
     stratify=y_temp
 )
 
-
 class ASLDataset(Dataset):
     def __init__(self, X, y):
         self.X = torch.tensor(X)
@@ -80,7 +79,6 @@ class ASLDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]
-
 
 train_dataset = ASLDataset(X_train, y_train)
 val_dataset = ASLDataset(X_val, y_val)
@@ -103,7 +101,6 @@ test_loader = DataLoader(
     batch_size=BATCH_SIZE,
     shuffle=False
 )
-
 
 class ASLModel(nn.Module):
     def __init__(self, num_classes):
@@ -129,7 +126,6 @@ class ASLModel(nn.Module):
 
     def forward(self, x):
         return self.network(x)
-
 
 model = ASLModel(len(class_names)).to(DEVICE)
 
@@ -287,6 +283,97 @@ model.load_state_dict(
     checkpoint["model_state_dict"]
 )
 
+SPLIT_CMAPS = {
+    "train": "Purples",
+    "validation": "Blues",
+    "test": "Greens"
+}
+
+def plot_colored_confusion_matrix(cm, class_names, split_name):
+    cmap = SPLIT_CMAPS.get(split_name, "Blues")
+
+    plt.figure(figsize=(18, 15))
+
+    sns.heatmap(
+        cm,
+        annot=False,
+        cmap=cmap,
+        xticklabels=class_names,
+        yticklabels=class_names
+    )
+
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+    plt.title(f"{split_name} Confusion Matrix")
+    plt.tight_layout()
+    plt.savefig(f"results/{split_name}_confusion_matrix.png", dpi=150)
+    plt.close()
+    print(f"Confusion matrix saved: results/{split_name}_confusion_matrix.png")
+
+def print_per_class_accuracy(all_labels, all_preds, class_names, split_name):
+    cm = confusion_matrix(all_labels, all_preds, labels=np.arange(len(class_names)))
+
+    print(f"\n{'='*55}")
+    print(f"  Per-Letter Accuracy — {split_name}")
+    print(f"{'='*55}")
+    print(f"  {'Letter':<10} {'Correct':>8} {'Total':>8} {'Accuracy':>10}  Bar")
+    print(f"  {'-'*10} {'-'*8} {'-'*8} {'-'*10}  ---")
+
+    per_class_acc = []
+    for i, cls in enumerate(class_names):
+        total_cls = cm[i].sum()
+        correct_cls = cm[i, i]
+        acc = correct_cls / total_cls if total_cls > 0 else 0.0
+        per_class_acc.append(acc)
+
+        bar_len = int(acc * 20)
+        bar = "█" * bar_len + "░" * (20 - bar_len)
+        print(f"  {cls:<10} {correct_cls:>8} {total_cls:>8} {acc:>9.2%}  [{bar}]")
+
+    mean_acc = np.mean(per_class_acc)
+    print(f"  {'-'*10} {'-'*8} {'-'*8} {'-'*10}")
+    print(f"  {'AVERAGE':<10} {'':>8} {'':>8} {mean_acc:>9.2%}")
+    print(f"{'='*55}\n")
+
+    with open(f"results/{split_name}_per_letter_accuracy.txt", "w") as f:
+        f.write(f"Per-Letter Accuracy — {split_name}\n")
+        f.write(f"{'='*45}\n")
+        f.write(f"{'Letter':<10} {'Correct':>8} {'Total':>8} {'Accuracy':>10}\n")
+        f.write(f"{'-'*45}\n")
+        for i, cls in enumerate(class_names):
+            total_cls = cm[i].sum()
+            correct_cls = cm[i, i]
+            acc = correct_cls / total_cls if total_cls > 0 else 0.0
+            f.write(f"{cls:<10} {correct_cls:>8} {total_cls:>8} {acc:>9.2%}\n")
+        f.write(f"{'-'*45}\n")
+        f.write(f"{'AVERAGE':<10} {'':>8} {'':>8} {mean_acc:>9.2%}\n")
+
+    fig, ax = plt.subplots(figsize=(max(10, num_classes * 0.5), 5))
+    colors = plt.cm.RdYlGn(np.array(per_class_acc))
+    bars = ax.bar(class_names, per_class_acc, color=colors, edgecolor="black", linewidth=0.5)
+
+    ax.set_ylim(0, 1.05)
+    ax.set_xlabel("Letter", fontsize=12)
+    ax.set_ylabel("Accuracy", fontsize=12)
+    ax.set_title(f"Per-Letter Accuracy — {split_name}", fontsize=14)
+    ax.axhline(y=mean_acc, color="blue", linestyle="--", linewidth=1.5, label=f"Average: {mean_acc:.2%}")
+    ax.legend()
+
+    for bar, acc in zip(bars, per_class_acc):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.01,
+            f"{acc:.0%}",
+            ha="center", va="bottom", fontsize=7, rotation=45
+        )
+
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.savefig(f"results/{split_name}_per_letter_accuracy.png", dpi=150)
+    plt.close()
+    print(f"Per-letter accuracy chart saved: results/{split_name}_per_letter_accuracy.png")
+
+num_classes = len(class_names)
 
 def evaluate_model(loader, split_name):
 
@@ -331,28 +418,9 @@ def evaluate_model(loader, split_name):
 
     cm = confusion_matrix(all_labels, all_preds)
 
-    plt.figure(figsize=(18, 15))
+    plot_colored_confusion_matrix(cm, class_names, split_name)
 
-    sns.heatmap(
-        cm,
-        annot=False,
-        cmap="Blues",
-        xticklabels=class_names,
-        yticklabels=class_names
-    )
-
-    plt.xlabel("Predicted")
-
-    plt.ylabel("True")
-
-    plt.title(f"{split_name} Confusion Matrix")
-
-    plt.tight_layout()
-
-    plt.savefig(f"results/{split_name}_confusion_matrix.png")
-
-    plt.close()
-
+    print_per_class_accuracy(all_labels, all_preds, class_names, split_name)
 
 evaluate_model(train_loader, "train")
 
