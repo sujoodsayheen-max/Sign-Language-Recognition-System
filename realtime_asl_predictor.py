@@ -8,10 +8,16 @@ import torch
 import torch.nn as nn
 import mediapipe as mp
 
-# تصحيح الـ Imports المباشر لضمان التوافق داخل الدوكر
-import mediapipe.solutions.hands as mp_hands
-import mediapipe.solutions.drawing_utils as mp_draw
-import mediapipe.solutions.drawing_styles as mp_styles
+
+try:
+    mp_hands = mp.solutions.hands
+    mp_draw = mp.solutions.drawing_utils
+    mp_styles = mp.solutions.drawing_styles
+except AttributeError:
+    import sys
+    mp_hands = sys.modules['mediapipe'].solutions.hands
+    mp_draw = sys.modules['mediapipe'].solutions.drawing_utils
+    mp_styles = sys.modules['mediapipe'].solutions.drawing_styles
 
 MODEL_PATH = "models/best_asl_model.pth"
 LABELS_PATH = "models/labels.json"
@@ -20,7 +26,6 @@ SMOOTHING_WINDOW = 15
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", DEVICE)
 
-# فحص إذا كان التطبيق يعمل داخل حاوية دوكر
 IS_DOCKER = os.path.exists('/.dockerenv')
 
 with open(LABELS_PATH, "r") as f:
@@ -67,25 +72,19 @@ def stable_prediction(buffer):
         return None
     return Counter(buffer).most_common(1)[0][0]
 
-# --- طور التشغيل داخل الدوكر (محاكاة بدون كاميرا وشاشة) ---
 if IS_DOCKER:
     print("\n[INFO] Running inside Docker Container. Starting pipeline simulation...")
     print("[INFO] Simulating sign language inference loop. Press Ctrl+C to stop container.")
     
-    # مصفوفة وهمية تمثل فريم صورة أسود بحجم طبيعي
     dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
     
     try:
         while True:
-            # معالجة الفريم الوهمي للتأكد من عمل الـ MediaPipe pipeline
             rgb = cv2.cvtColor(dummy_frame, cv2.COLOR_BGR2RGB)
             results = hands.process(rgb)
             
-            # طباعة الـ Logs الدورية لفرص نجاح تشغيل الموديل
             print(f"[LOG] Frame processed. Device: {DEVICE} | Model Eval: OK | Status: Waiting for hand landmarks...")
-            sys.stdout.flush() # لتحديث الـ Logs في الدوكر ديسكتوب فوراً
-            
-            # تأخير زمني بسيط عشان الـ Logs ما تتعبى بسرعة
+            sys.stdout.flush() 
             torch.cuda.empty_cache() if torch.cuda.is_available() else None
             import time
             time.sleep(2)
@@ -94,7 +93,6 @@ if IS_DOCKER:
         print("[INFO] Simulation stopped by user.")
         sys.exit(0)
 
-# --- طور التشغيل الطبيعي على جهازك الشخصي (لوكال بكاميرا وشاشة) ---
 else:
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
