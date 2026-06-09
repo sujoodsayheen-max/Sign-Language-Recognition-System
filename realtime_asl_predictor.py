@@ -8,17 +8,6 @@ import torch
 import torch.nn as nn
 import mediapipe as mp
 
-
-try:
-    mp_hands = mp.solutions.hands
-    mp_draw = mp.solutions.drawing_utils
-    mp_styles = mp.solutions.drawing_styles
-except AttributeError:
-    import sys
-    mp_hands = sys.modules['mediapipe'].solutions.hands
-    mp_draw = sys.modules['mediapipe'].solutions.drawing_utils
-    mp_styles = sys.modules['mediapipe'].solutions.drawing_styles
-
 MODEL_PATH = "models/best_asl_model.pth"
 LABELS_PATH = "models/labels.json"
 CONFIDENCE_THRESHOLD = 0.70
@@ -58,7 +47,7 @@ model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 print("Model loaded successfully!")
 
-hands = mp_hands.Hands(
+hands = mp.solutions.hands.Hands(
     static_image_mode=False,
     max_num_hands=1,
     model_complexity=1,
@@ -74,26 +63,25 @@ def stable_prediction(buffer):
 
 if IS_DOCKER:
     print("\n[INFO] Running inside Docker Container. Starting pipeline simulation...")
-    print("[INFO] Simulating sign language inference loop. Press Ctrl+C to stop container.")
-    
     dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
     
     try:
         while True:
             rgb = cv2.cvtColor(dummy_frame, cv2.COLOR_BGR2RGB)
             results = hands.process(rgb)
-            
             print(f"[LOG] Frame processed. Device: {DEVICE} | Model Eval: OK | Status: Waiting for hand landmarks...")
-            sys.stdout.flush() 
-            torch.cuda.empty_cache() if torch.cuda.is_available() else None
+            sys.stdout.flush()
             import time
             time.sleep(2)
-            
     except KeyboardInterrupt:
         print("[INFO] Simulation stopped by user.")
         sys.exit(0)
 
 else:
+    mp_hands = mp.solutions.hands
+    mp_draw = mp.solutions.drawing_utils
+    mp_styles = mp.solutions.drawing_styles
+
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         raise RuntimeError("Could not open camera")
@@ -151,4 +139,21 @@ else:
             stable = stable_prediction(prediction_buffer)
 
             if stable:
-                shown_
+                shown_text = f"Letter: {stable}"
+            else:
+                shown_text = "Reading..."
+
+            shown_conf = f"Prediction: {predicted_label} | Confidence: {conf:.2f}"
+
+        cv2.putText(display, shown_text, (20, 45), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (0, 255, 0), 2)
+        cv2.putText(display, shown_conf, (20, 85), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 255), 2)
+        cv2.putText(display, "MediaPipe + PyTorch Hybrid Model", (20, display.shape[0] - 45), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (220, 220, 220), 2)
+        cv2.putText(display, "Press q to quit", (20, display.shape[0] - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (220, 220, 220), 2)
+
+        cv2.imshow("ASL Hybrid Recognition", display)
+
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
