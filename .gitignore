@@ -9,6 +9,7 @@ ASL_Alphabet_Dataset/
 
 # Models
 *.pth
+!models/best_asl_model.pth
 
 
 __pycache__/
